@@ -1,4 +1,5 @@
-const express = require("express");
+import express from "express";
+import prisma from "./config/database.js";
 
 const app = express();
 
@@ -11,6 +12,24 @@ app.get("/api/health", (req, res) => {
         success: true,
         message: "Content Credibility Analyzer is running"
     });
+});
+
+app.get("/api/users", async(req, res) => {
+    try {
+        const users = await prisma.user.findMany();
+
+        res.json({
+            success: true,
+            data: users
+        });
+    } catch (error) {
+        console.error(error);
+
+        res.status(500).json({
+            success: false,
+            message: "Failed to fetch users"
+        });
+    }
 });
 
 app.listen(PORT, () => {
