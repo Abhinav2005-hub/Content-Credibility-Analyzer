@@ -120,3 +120,39 @@ export async function login(req, res) {
         });
     }
 }
+
+export async function getMe(req, res) {
+    try {
+        const user = await prisma.user.findUnique({
+            where: {
+                id: req.userId
+            },
+            select: {
+                id: true,
+                name: true,
+                email: true,
+                createdAt: true
+            }
+        });
+
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found"
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            data: user
+        });
+
+    } catch (error) {
+        console.error("Get me error:", error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Failed to get user"
+        });
+    }
+}
