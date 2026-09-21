@@ -1,6 +1,7 @@
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import prisma from "../config/database.js";
+import jwt from "jsonwebtoken";
 
 const registerSchema = z.object({
     name: z.string().min(2).max(100),
@@ -53,6 +54,69 @@ export async function register(req, res) {
         return res.status(500).json({
             success: false,
             message: "Registration failed"
+        });
+    }
+}
+
+export async function login(req, res) {
+    try {
+
+        const data = z.object({
+            email: z.string().email(),
+            password: z.string().min(8)
+        }).parse(req.body);
+
+        const user = await prisma.user.findUnique({
+            where: {
+                email: data.email
+            }
+        });
+
+        if (!user) {
+            return res.status(401).json({
+                success: false,
+                message: "Invalid email or password"
+            });
+        }
+
+        const isPasswordValid = await bcrypt.compare(
+            data.password,
+            user.passwordHash
+        );
+
+        console.log("Password valid:", isPasswordValid);
+
+        if (!isPasswordValid) {
+            return res.status(401).json({
+                success: false,
+                message: "Invalid email or password"
+            });
+        }
+
+        const token = jwt.sign(
+            {
+                userId: user.id
+            },
+            process.env.JWT_SECRET,
+            {
+                expiresIn: "7d"
+            }
+        );
+
+        return res.status(200).json({
+            success: true,
+            message: "Login successful",
+            data: {
+                token
+            }
+        });
+
+    } catch (error) {
+        console.error("Login error:", error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Login failed"
         });
     }
 }
