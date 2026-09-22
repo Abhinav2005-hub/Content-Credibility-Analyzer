@@ -106,3 +106,49 @@ export async function getContentById(req, res) {
         });
     }
 }
+
+export async function deleteContent (req, res) {
+    try {
+        const contentId = Number(req.params.id);
+
+        if (Number .isNaN(contentId)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid content ID"
+            });
+        }
+
+        const content = await prisma.content.findFirst({
+            where: {
+                id: contentId,
+                userId: req.userId
+            }
+        });
+
+        if (!content) {
+            return res.status(404).json ({
+                success: false,
+                message: "Content not found"
+            });
+        }
+
+        await prisma.content.delete({
+            where: {
+                id: contentId
+            }
+        });
+
+        return res.status(200).json({
+            success: true,
+            message: "Content deleted successfully"
+        });
+
+    } catch (error) {
+        console.error("Delete content error:", error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Failed to delete content"
+        });
+    }
+}
