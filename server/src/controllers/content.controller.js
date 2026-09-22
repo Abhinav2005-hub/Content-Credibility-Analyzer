@@ -40,3 +40,69 @@ export async function createContent(req, res) {
         });
     }
 }
+
+export async function getContents(req, res) {
+    try {
+        const contents = await prisma.content.findMany({
+            where: {
+                userId: req.userId
+            },
+            orderBy: {
+                createdAt: "desc"
+            }
+        });
+
+        return res.status(200).json({
+            success: true,
+            data: contents
+        });
+
+    } catch (error) {
+        console.error("Get contents error:", error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Failed to fetch content"
+        });
+    }
+}
+
+export async function getContentById(req, res) {
+    try {
+        const contentId = Number(req.params.id);
+
+        if (Number .isNaN(contentId)) {
+            return res.status(400).json ({
+                success: false,
+                message: "Invalid content Id"
+            });
+        }
+
+        const content = await prisma.content.findFirst({
+            where: {
+                id: contentId,
+                userId: req.userId
+            }
+        });
+
+        if(!content) {
+            return res.status(404).json ({
+                success: false,
+                message: "Content not found"
+            });
+        }
+
+        return res.status(200).json ({
+            success: true,
+            data: content
+        });
+
+    } catch (error) {
+        console.error("Get content by ID error:", error);
+
+        return res.status(500).json ({
+            success: false,
+            message: "Failed to fetch content"
+        });
+    }
+}
