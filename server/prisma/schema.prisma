@@ -28,7 +28,8 @@ model Content {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  claims Claim[]
+  claims   Claim[]
+  analyses Analysis[]
 
   @@index([userId])
 }
@@ -39,8 +40,10 @@ model Claim {
   text      String
   createdAt DateTime @default(now())
 
-  content  Content    @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  content Content @relation(fields: [contentId], references: [id], onDelete: Cascade)
   evidence Evidence[]
+
+  verificationResults VerificationResult[]
 
   @@index([contentId])
 }
@@ -66,4 +69,34 @@ model Evidence {
 
   @@index([claimId])
   @@index([sourceId])
+}
+
+model Analysis {
+  id        Int      @id @default(autoincrement())
+  contentId Int
+  status    String   @default("pending")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  content Content @relation(fields: [contentId], references: [id], onDelete: Cascade)
+
+  verificationResults VerificationResult[]
+
+  @@index([contentId])
+}
+
+model VerificationResult {
+  id          Int      @id @default(autoincrement())
+  analysisId  Int
+  claimId     Int
+  assessment  String
+  explanation String
+  confidence  String?
+  createdAt   DateTime @default(now())
+
+  analysis Analysis @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+  claim    Claim    @relation(fields: [claimId], references: [id], onDelete: Cascade)
+
+  @@index([analysisId])
+  @@index([claimId])
 }
