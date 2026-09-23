@@ -72,3 +72,57 @@ export async function createEvidence(req, res) {
         });
     }
 }
+
+export async function getEvidence(req, res) {
+    try {
+        const claimId = Number(req.params.claimId);
+
+        if (Number.isNaN(claimId)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid claim ID"
+            });
+        }
+
+        const claim = await prisma.claim.findFirst({
+            where: {
+                id: claimId,
+                content: {
+                    userId: req.userId
+                }
+            }
+        });
+
+        if (!claim) {
+            return res.status(404).json({
+                success: false,
+                message: "Claim not found"
+            });
+        }
+
+        const evidence = await prisma.evidence.findMany({
+            where: {
+                claimId
+            },
+            include: {
+                source: true
+            },
+            orderBy: {
+                createdAt: "desc"
+            }
+        });
+
+        return res.status(200).json({
+            success: true,
+            data: evidence
+        });
+
+    } catch (error) {
+        console.error("Get evidence error:", error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Failed to fetch evidence"
+        });
+    }
+}
