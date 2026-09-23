@@ -71,7 +71,7 @@ export async function getContentById(req, res) {
     try {
         const contentId = Number(req.params.id);
 
-        if (Number .isNaN(contentId)) {
+        if (Number.isNaN(contentId)) {
             return res.status(400).json ({
                 success: false,
                 message: "Invalid content Id"
@@ -111,7 +111,7 @@ export async function deleteContent (req, res) {
     try {
         const contentId = Number(req.params.id);
 
-        if (Number .isNaN(contentId)) {
+        if (Number.isNaN(contentId)) {
             return res.status(400).json({
                 success: false,
                 message: "Invalid content ID"

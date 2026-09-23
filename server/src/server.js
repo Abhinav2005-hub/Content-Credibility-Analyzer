@@ -2,6 +2,8 @@ import express from "express";
 import prisma from "./config/database.js";
 import authRoutes from "./routes/auth.routes.js";
 import contentRoutes from "./routes/content.routes.js";
+import claimRoutes from "./routes/claim.routes.js";
+import sourceRoutes from "./routes/source.routes.js";
 
 const app = express();
 
@@ -11,6 +13,8 @@ app.use(express.json());
 
 app.use("/api/auth", authRoutes);
 app.use("/api/content", contentRoutes);
+app.use("/api", claimRoutes);
+app.use("/api/sources", sourceRoutes);
 
 app.get("/api/health", (req, res) => {
     res.json({
