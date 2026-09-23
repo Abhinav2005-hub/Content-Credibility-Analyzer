@@ -39,7 +39,31 @@ model Claim {
   text      String
   createdAt DateTime @default(now())
 
-  content Content @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  content  Content    @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  evidence Evidence[]
 
   @@index([contentId])
+}
+
+model Source {
+  id          Int      @id @default(autoincrement())
+  title       String?
+  url         String   @unique
+  createdAt   DateTime @default(now())
+
+  evidence Evidence[]
+}
+
+model Evidence {
+  id        Int      @id @default(autoincrement())
+  claimId  Int
+  sourceId Int
+  text      String
+  createdAt DateTime @default(now())
+
+  claim  Claim  @relation(fields: [claimId], references: [id], onDelete: Cascade)
+  source Source @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+
+  @@index([claimId])
+  @@index([sourceId])
 }
