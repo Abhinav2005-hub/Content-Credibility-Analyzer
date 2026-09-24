@@ -1,11 +1,12 @@
 import prisma from "../config/database";
+import { extractClaims } from "../services/claimExtraction.service.js";
 
 export async function createAnalysis(req, res) {
     try {
         const contentId = Number(req.params.contentId);
 
         if (Number.isNaN(contentId)) {
-            return res.status(400).json ({
+            return res.status(400).json({
                 success: false,
                 message: "Invalid content ID"
             });
@@ -19,7 +20,7 @@ export async function createAnalysis(req, res) {
         });
 
         if (!content) {
-            return res.status(404).json ({
+            return res.status(404).json({
                 success: false,
                 message: "Content not found"
             });
@@ -28,14 +29,37 @@ export async function createAnalysis(req, res) {
         const analysis = await prisma.analysis.create({
             data: {
                 contentId,
-                status: "pending"
+                status: "processing"
+            }
+        });
+
+        const extractedClaims = extractClaims(content.text);
+
+        if (extractedClaims.length > 0) {
+            await prisma.claim.createMany({
+                data: extractedClaims.map((claim) => ({
+                    contentId,
+                    text: claim.text
+                }))
+            });
+        }
+
+        const completedAnalysis = await prisma.analysis.update({
+            where: {
+                id: analysis.id
+            },
+            data: {
+                status: "completed"
             }
         });
 
         return res.status(201).json({
             success: true,
-            message: "Analysis created successfully",
-            data: analysis
+            message: "Analysis completed successfully",
+            data: {
+                analysis: completedAnalysis,
+                claimsExtracted: extractedClaims.length
+            }
         });
 
     } catch (error) {
