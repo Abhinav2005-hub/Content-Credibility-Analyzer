@@ -12,7 +12,7 @@ export async function retrieveEvidence(claimId) {
     });
 
     if (!claim) {
-        throw new Error("Claim  not found");
+        throw new Error("Claim not found");
     }
 
     const evidence = await prisma.evidence.findMany({
@@ -20,7 +20,8 @@ export async function retrieveEvidence(claimId) {
             claimId
         },
         include: {
-            source: true
+            source: true,
+            claim: true
         },
         orderBy: {
             createdAt: "desc"
