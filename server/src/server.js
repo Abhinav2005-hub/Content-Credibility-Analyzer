@@ -6,6 +6,7 @@ import claimRoutes from "./routes/claim.routes.js";
 import sourceRoutes from "./routes/source.routes.js";
 import evidenceRoutes from "./routes/evidence.routes.js";
 import analysisRoutes from "./routes/analysis.routes.js";
+import verificationResultRoutes from "./routes/verificationResult.routes.js";
 
 const app = express();
 
@@ -19,6 +20,7 @@ app.use("/api", claimRoutes);
 app.use("/api/sources", sourceRoutes);
 app.use("/api", evidenceRoutes);
 app.use("/api", analysisRoutes);
+app.use("/api", verificationResultRoutes);
 
 app.get("/api/health", (req, res) => {
     res.json({
