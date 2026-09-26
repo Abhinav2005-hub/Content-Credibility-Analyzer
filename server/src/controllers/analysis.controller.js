@@ -1,6 +1,6 @@
-import prisma from "../config/database";
-import { verifyClaimForAnalysis } from "../services/verificationPipeline.service.js";
+import prisma from "../config/database.js";
 import { extractClaims } from "../services/claimExtraction.service.js";
+import { runRagVerification } from "../services/ragVerification.service.js";
 
 export async function createAnalysis(req, res) {
     try {
@@ -57,7 +57,7 @@ export async function createAnalysis(req, res) {
         const verificationResults = [];
 
         for (const claim of claims) {
-            const result = await verifyClaimForAnalysis(
+            const result = await runRagVerification(
                 analysis.id,
                 claim.id
             );
