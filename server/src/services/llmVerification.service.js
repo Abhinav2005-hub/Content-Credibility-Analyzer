@@ -1,4 +1,11 @@
-export function verifyClaim(claimText, rankedEvidence) {
+import "dotenv/config";
+import { GoogleGenAI } from "@google/genai";
+
+const ai = new GoogleGenAI({
+    apiKey: process.env.GEMINI_API_KEY
+});
+
+export async function verifyClaim(claimText, rankedEvidence) {
     if (!claimText) {
         throw new Error("Claim text is required");
     }
@@ -15,19 +22,75 @@ export function verifyClaim(claimText, rankedEvidence) {
         };
     }
 
-    const topEvidence = rankedEvidence[0];
+    const evidenceText = rankedEvidence
+        .slice(0, 5)
+        .map((evidence, index) => {
+            return `Evidence ${index + 1}:
+${evidence.text}
+Source: ${evidence.source?.url ?? "Unknown"}`;
+        })
+        .join("\n\n");
 
-    if (topEvidence.relevanceScore > 0) {
-        return {
-            assessment: "supported",
-            explanation: `The available evidence is relevant to the claim: "${topEvidence.text}"`,
-            confidence: "medium"
-        };
-    }
+    const prompt = `
+You are a content verification assistant.
 
-    return {
-        assessment: "insufficient_evidence",
-        explanation: "The available evidence does not provide enough information to verify the claim.",
-        confidence: "low"
-    };
+Your task is to evaluate a claim using ONLY the evidence provided below.
+
+Claim:
+${claimText}
+
+Evidence:
+${evidenceText}
+
+Return your assessment using these rules:
+
+- "supported" if the evidence supports the claim.
+- "contradicted" if the evidence conflicts with the claim.
+- "insufficient_evidence" if the evidence is not enough to determine whether the claim is true.
+
+Also provide:
+- a short explanation based only on the evidence
+- a confidence level: "low", "medium", or "high"
+
+Do not invent facts or evidence.
+`;
+
+    const response = await ai.models.generateContent({
+        model: "gemini-3.7-flash",
+        contents: prompt,
+        config: {
+            responseMimeType: "application/json",
+            responseSchema: {
+                type: "object",
+                properties: {
+                    assessment: {
+                        type: "string",
+                        enum: [
+                            "supported",
+                            "contradicted",
+                            "insufficient_evidence"
+                        ]
+                    },
+                    explanation: {
+                        type: "string"
+                    },
+                    confidence: {
+                        type: "string",
+                        enum: [
+                            "low",
+                            "medium",
+                            "high"
+                        ]
+                    }
+                },
+                required: [
+                    "assessment",
+                    "explanation",
+                    "confidence"
+                ]
+            }
+        }
+    });
+
+    return JSON.parse(response.text);
 }
