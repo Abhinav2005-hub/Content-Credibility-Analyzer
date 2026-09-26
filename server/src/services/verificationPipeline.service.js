@@ -36,7 +36,7 @@ export async function verifyClaimForAnalysis(analysisId, claimId) {
         evidence
     );
 
-    const verification = verifyClaim(
+    const verification = await verifyClaim(
         claim.text,
         rankedEvidence
     );
