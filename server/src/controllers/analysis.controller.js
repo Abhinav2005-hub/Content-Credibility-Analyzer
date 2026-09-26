@@ -1,4 +1,5 @@
 import prisma from "../config/database";
+import { verifyClaimForAnalysis } from "../services/verificationPipeline.service.js";
 import { extractClaims } from "../services/claimExtraction.service.js";
 
 export async function createAnalysis(req, res) {
@@ -44,6 +45,26 @@ export async function createAnalysis(req, res) {
             });
         }
 
+        const claims = await prisma.claim.findMany({
+            where: {
+                contentId
+            },
+            orderBy: {
+                createdAt: "desc"
+            }
+        });
+
+        const verificationResults = [];
+
+        for (const claim of claims) {
+            const result = await verifyClaimForAnalysis(
+                analysis.id,
+                claim.id
+            );
+
+            verificationResults.push(result);
+        }
+
         const completedAnalysis = await prisma.analysis.update({
             where: {
                 id: analysis.id
@@ -58,7 +79,8 @@ export async function createAnalysis(req, res) {
             message: "Analysis completed successfully",
             data: {
                 analysis: completedAnalysis,
-                claimsExtracted: extractedClaims.length
+                claimsExtracted: extractedClaims.length,
+                verificationResults
             }
         });
 
@@ -67,7 +89,7 @@ export async function createAnalysis(req, res) {
 
         return res.status(500).json({
             success: false,
-            message: "Failed to create analysis"
+            message: "Failed to complete analysis"
         });
     }
 }
