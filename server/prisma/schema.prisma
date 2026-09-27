@@ -8,11 +8,11 @@ datasource db {
 }
 
 model User {
-  id           Int       @id @default(autoincrement())
+  id           Int      @id @default(autoincrement())
   name         String
-  email        String    @unique
+  email        String   @unique
   passwordHash String
-  createdAt    DateTime  @default(now())
+  createdAt    DateTime @default(now())
 
   contents Content[]
 }
@@ -41,6 +41,7 @@ model Claim {
   createdAt DateTime @default(now())
 
   content Content @relation(fields: [contentId], references: [id], onDelete: Cascade)
+
   evidence Evidence[]
 
   verificationResults VerificationResult[]
@@ -49,18 +50,18 @@ model Claim {
 }
 
 model Source {
-  id          Int      @id @default(autoincrement())
-  title       String?
-  url         String   @unique
-  createdAt   DateTime @default(now())
+  id        Int      @id @default(autoincrement())
+  title     String?
+  url       String   @unique
+  createdAt DateTime @default(now())
 
   evidence Evidence[]
 }
 
 model Evidence {
   id        Int      @id @default(autoincrement())
-  claimId  Int
-  sourceId Int
+  claimId   Int
+  sourceId  Int
   text      String
   createdAt DateTime @default(now())
 

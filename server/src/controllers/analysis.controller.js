@@ -3,6 +3,8 @@ import { extractClaims } from "../services/claimExtraction.service.js";
 import { runRagVerification } from "../services/ragVerification.service.js";
 
 export async function createAnalysis(req, res) {
+    let analysis;
+
     try {
         const contentId = Number(req.params.contentId);
 
@@ -27,7 +29,7 @@ export async function createAnalysis(req, res) {
             });
         }
 
-        const analysis = await prisma.analysis.create({
+        analysis = await prisma.analysis.create({
             data: {
                 contentId,
                 status: "processing"
@@ -36,23 +38,16 @@ export async function createAnalysis(req, res) {
 
         const extractedClaims = extractClaims(content.text);
 
+        let claims = [];
+
         if (extractedClaims.length > 0) {
-            await prisma.claim.createMany({
+            claims = await prisma.claim.createManyAndReturn({
                 data: extractedClaims.map((claim) => ({
                     contentId,
                     text: claim.text
                 }))
             });
         }
-
-        const claims = await prisma.claim.findMany({
-            where: {
-                contentId
-            },
-            orderBy: {
-                createdAt: "desc"
-            }
-        });
 
         const verificationResults = [];
 
@@ -86,6 +81,24 @@ export async function createAnalysis(req, res) {
 
     } catch (error) {
         console.error("Create analysis error:", error);
+
+        if (analysis) {
+            try {
+                await prisma.analysis.update({
+                    where: {
+                        id: analysis.id
+                    },
+                    data: {
+                        status: "failed"
+                    }
+                });
+            } catch (updateError) {
+                console.error(
+                    "Failed to update analysis status:",
+                    updateError
+                );
+            }
+        }
 
         return res.status(500).json({
             success: false,
