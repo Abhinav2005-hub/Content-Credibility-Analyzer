@@ -39,6 +39,22 @@ export async function saveSearchResults(claimId, results) {
             }
         });
 
+        const existingEvidence = await prisma.evidence.findFirst({
+            where: {
+                claimId,
+                sourceId: source.id,
+                text: result.content
+            },
+            include: {
+                source: true
+            }
+        });
+
+        if (existingEvidence) {
+            savedEvidence.push(existingEvidence);
+            continue;
+        }
+
         const evidence = await prisma.evidence.create({
             data: {
                 claimId,
