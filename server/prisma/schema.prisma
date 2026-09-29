@@ -100,4 +100,5 @@ model VerificationResult {
 
   @@index([analysisId])
   @@index([claimId])
+  @@unique([analysisId, claimId])
 }

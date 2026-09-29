@@ -47,8 +47,19 @@ export async function runRagVerification(analysisId, claimId) {
         rankedEvidence
     );
 
-    const result = await prisma.verificationResult.create({
-        data: {
+    const result = await prisma.verificationResult.upsert({
+        where: {
+            analysisId_claimId: {
+                analysisId,
+                claimId
+            }
+        },
+        update: {
+            assessment: verification.assessment,
+            explanation: verification.explanation,
+            confidence: verification.confidence
+        },
+        create: {
             analysisId,
             claimId,
             assessment: verification.assessment,
