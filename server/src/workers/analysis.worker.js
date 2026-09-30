@@ -11,59 +11,79 @@ const worker = new Worker(
 
         console.log(`Processing job: ${job.id}`);
 
-        await prisma.analysis.update({
-            where: { id: analysisId },
-            data: { status: "processing" }
-        });
-
-        const content = await prisma.content.findUnique({
-            where: { id: contentId }
-        });
-
-        if (!content) {
-            throw new Error("Content not found");
-        }
-
-        const extractedClaims = extractClaims(content.text);
-
-        console.log(`Claims extracted: ${extractedClaims.length}`);
-
-        if (extractedClaims.length > 0) {
-            await prisma.claim.createMany({
-                data: extractedClaims.map((claim) => ({
-                    contentId,
-                    analysisId,
-                    text: claim.text
-                }))
+        try {
+            await prisma.analysis.update({
+                where: { id: analysisId },
+                data: { status: "processing" }
             });
-        }
 
-        const claims = await prisma.claim.findMany({
-            where: { analysisId },
-            orderBy: { createdAt: "asc" }
-        });
+            const content = await prisma.content.findUnique({
+                where: { id: contentId }
+            });
 
-        for (const claim of claims) {
-            console.log(`Verifying claim ${claim.id}`);
+            if (!content) {
+                throw new Error("Content not found");
+            }
 
-            await runRagVerification(
+            const extractedClaims = extractClaims(content.text);
+
+            console.log(`Claims extracted: ${extractedClaims.length}`);
+
+            let claims = [];
+
+            if (extractedClaims.length > 0) {
+                claims = await prisma.claim.createManyAndReturn({
+                    data: extractedClaims.map((claim) => ({
+                        contentId,
+                        text: claim.text
+                    }))
+                });
+            }
+
+            console.log(`Claims created: ${claims.length}`);
+
+            for (const claim of claims) {
+                console.log(`Verifying claim ${claim.id}`);
+
+                await runRagVerification(
+                    analysisId,
+                    claim.id
+                );
+            }
+
+            await prisma.analysis.update({
+                where: { id: analysisId },
+                data: { status: "completed" }
+            });
+
+            console.log(`Analysis ${analysisId} completed`);
+
+            return {
+                success: true,
                 analysisId,
-                claim.id
+                claimsProcessed: claims.length
+            };
+
+        } catch (error) {
+            console.error(
+                `Analysis ${analysisId} failed:`,
+                error
             );
+
+            try {
+                await prisma.analysis.update({
+                    where: { id: analysisId },
+                    data: { status: "failed" }
+                });
+            } catch (updateError) {
+                console.error(
+                    "Failed to update analysis status:",
+                    updateError
+                );
+            }
+
+            throw error;
         }
-
-        const completedAnalysis = await prisma.analysis.update({
-            where: { id: analysisId },
-            data: { status: "completed" }
-        });
-
-        console.log(`Analysis ${analysisId} completed`);
-
-        return {
-            success: true,
-            analysisId,
-            claimsProcessed: claims.length
-        };
     },
     {
         connection: redis
@@ -75,7 +95,10 @@ worker.on("completed", (job) => {
 });
 
 worker.on("failed", (job, error) => {
-    console.error(`Job ${job?.id} failed:`, error);
+    console.error(
+        `Job ${job?.id} failed:`,
+        error
+    );
 });
 
 console.log("Analysis worker started");
