@@ -94,11 +94,36 @@ worker.on("completed", (job) => {
     console.log(`Job ${job.id} completed`);
 });
 
-worker.on("failed", (job, error) => {
-    console.error(
-        `Job ${job?.id} failed:`,
-        error
-    );
+worker.on("failed", async (job, error) => {
+    console.error(`Job ${job?.id} failed:`, error);
+
+    if (!job) {
+        return;
+    }
+
+    const maxAttempts = job.opts.attempts ?? 1;
+
+    if (job.attemptsMade >= maxAttempts) {
+        try {
+            await prisma.analysis.update({
+                where: {
+                    id: job.data.analysisId
+                },
+                data: {
+                    status: "failed"
+                }
+            });
+
+            console.log(
+                `Analysis ${job.data.analysisId} marked as failed`
+            );
+        } catch (updateError) {
+            console.error(
+                "Failed to update analysis status:",
+                updateError
+            );
+        }
+    }
 });
 
 console.log("Analysis worker started");
