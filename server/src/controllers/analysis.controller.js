@@ -26,6 +26,25 @@ export async function createAnalysis(req, res) {
             });
         }
 
+        const existingAnalysis = await prisma.analysis.findFirst({
+            where: {
+                contentId,
+                status: {
+                    in: ["pending", "processing"]
+                }
+            }
+        });
+        
+        if (existingAnalysis) {
+            return res.status(409).json({
+                success: false,
+                message: "An analysis is already in progress for this content",
+                data: {
+                    analysis: existingAnalysis
+                }
+            });
+        }
+
         const analysis = await prisma.analysis.create({
             data: {
                 contentId,
