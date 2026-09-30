@@ -1,10 +1,7 @@
 import prisma from "../config/database.js";
-import { extractClaims } from "../services/claimExtraction.service.js";
-import { runRagVerification } from "../services/ragVerification.service.js";
+import { analysisQueue } from "../queues/analysis.queue.js";
 
 export async function createAnalysis(req, res) {
-    let analysis;
-
     try {
         const contentId = Number(req.params.contentId);
 
@@ -29,80 +26,33 @@ export async function createAnalysis(req, res) {
             });
         }
 
-        analysis = await prisma.analysis.create({
+        const analysis = await prisma.analysis.create({
             data: {
                 contentId,
-                status: "processing"
+                status: "pending"
             }
         });
 
-        const extractedClaims = extractClaims(content.text);
-
-        let claims = [];
-
-        if (extractedClaims.length > 0) {
-            claims = await prisma.claim.createManyAndReturn({
-                data: extractedClaims.map((claim) => ({
-                    contentId,
-                    text: claim.text
-                }))
-            });
-        }
-
-        const verificationResults = [];
-
-        for (const claim of claims) {
-            const result = await runRagVerification(
-                analysis.id,
-                claim.id
-            );
-
-            verificationResults.push(result);
-        }
-
-        const completedAnalysis = await prisma.analysis.update({
-            where: {
-                id: analysis.id
-            },
-            data: {
-                status: "completed"
-            }
+        const job = await analysisQueue.add("verify-content", {
+            analysisId: analysis.id,
+            contentId
         });
 
-        return res.status(201).json({
+        return res.status(202).json({
             success: true,
-            message: "Analysis completed successfully",
+            message: "Analysis started",
             data: {
-                analysis: completedAnalysis,
-                claimsExtracted: extractedClaims.length,
-                verificationResults
+                analysis,
+                jobId: job.id
             }
         });
 
     } catch (error) {
         console.error("Create analysis error:", error);
 
-        if (analysis) {
-            try {
-                await prisma.analysis.update({
-                    where: {
-                        id: analysis.id
-                    },
-                    data: {
-                        status: "failed"
-                    }
-                });
-            } catch (updateError) {
-                console.error(
-                    "Failed to update analysis status:",
-                    updateError
-                );
-            }
-        }
-
         return res.status(500).json({
             success: false,
-            message: "Failed to complete analysis"
+            message: "Failed to start analysis"
         });
     }
 }
