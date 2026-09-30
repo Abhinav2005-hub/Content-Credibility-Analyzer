@@ -124,3 +124,71 @@ export async function getAnalysis(req, res) {
         });
     }
 }
+
+export async function getAnalysisById(req, res) {
+    try {
+        const analysisId = Number(req.params.analysisId);
+
+        if (Number.isNaN(analysisId)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid analysis ID"
+            });
+        }
+
+        const analysis = await prisma.analysis.findFirst({
+            where: {
+                id: analysisId,
+                content: {
+                    userId: req.userId
+                }
+            },
+            include: {
+                content: {
+                    include: {
+                        claims: {
+                            include: {
+                                evidence: {
+                                    include: {
+                                        source: true
+                                    },
+                                    orderBy: {
+                                        createdAt: "desc"
+                                    }
+                                }
+                            },
+                            orderBy: {
+                                createdAt: "asc"
+                            }
+                        }
+                    }
+                },
+                verificationResults: {
+                    include: {
+                        claim: true
+                    }
+                }
+            }
+        });
+
+        if (!analysis) {
+            return res.status(404).json({
+                success: false,
+                message: "Analysis not found"
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            data: analysis
+        });
+
+    } catch (error) {
+        console.error("Get analysis error:", error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Failed to fetch analysis"
+        });
+    }
+}
