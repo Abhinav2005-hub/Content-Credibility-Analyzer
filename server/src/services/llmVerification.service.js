@@ -5,6 +5,9 @@ const ai = new GoogleGenAI({
     apiKey: process.env.GEMINI_API_KEY
 });
 
+const sleep = (ms) =>
+    new Promise((resolve) => setTimeout(resolve, ms));
+
 export async function verifyClaim(claimText, rankedEvidence) {
     if (!claimText) {
         throw new Error("Claim text is required");
@@ -24,11 +27,12 @@ export async function verifyClaim(claimText, rankedEvidence) {
 
     const evidenceText = rankedEvidence
         .slice(0, 5)
-        .map((evidence, index) => {
-            return `Evidence ${index + 1}:
+        .map(
+            (evidence, index) =>
+                `Evidence ${index + 1}:
 ${evidence.text}
-Source: ${evidence.source?.url ?? "Unknown"}`;
-        })
+Source: ${evidence.source?.url ?? "Unknown"}`
+        )
         .join("\n\n");
 
     const prompt = `
@@ -55,42 +59,71 @@ Also provide:
 Do not invent facts or evidence.
 `;
 
-    const response = await ai.models.generateContent({
-        model: "gemini-3.1-flash-lite",
-        contents: prompt,
-        config: {
-            responseMimeType: "application/json",
-            responseSchema: {
-                type: "object",
-                properties: {
-                    assessment: {
-                        type: "string",
-                        enum: [
-                            "supported",
-                            "contradicted",
-                            "insufficient_evidence"
-                        ]
-                    },
-                    explanation: {
-                        type: "string"
-                    },
-                    confidence: {
-                        type: "string",
-                        enum: [
-                            "low",
-                            "medium",
-                            "high"
+    const maxAttempts = 3;
+
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+        try {
+            console.log(
+                `Gemini verification attempt ${attempt}/${maxAttempts}`
+            );
+
+            const response = await ai.models.generateContent({
+                model: "gemini-3.1-flash-lite",
+                contents: prompt,
+                config: {
+                    responseMimeType: "application/json",
+                    responseSchema: {
+                        type: "object",
+                        properties: {
+                            assessment: {
+                                type: "string",
+                                enum: [
+                                    "supported",
+                                    "contradicted",
+                                    "insufficient_evidence"
+                                ]
+                            },
+                            explanation: {
+                                type: "string"
+                            },
+                            confidence: {
+                                type: "string",
+                                enum: [
+                                    "low",
+                                    "medium",
+                                    "high"
+                                ]
+                            }
+                        },
+                        required: [
+                            "assessment",
+                            "explanation",
+                            "confidence"
                         ]
                     }
-                },
-                required: [
-                    "assessment",
-                    "explanation",
-                    "confidence"
-                ]
-            }
-        }
-    });
+                }
+            });
 
-    return JSON.parse(response.text);
+            return JSON.parse(response.text);
+
+        } catch (error) {
+            console.error(
+                `Gemini attempt ${attempt} failed:`,
+                error.message
+            );
+
+            if (error.status === 503 && attempt < maxAttempts) {
+                const delay = attempt * 5000;
+
+                console.log(
+                    `Gemini temporarily unavailable. Retrying in ${delay / 1000}s...`
+                );
+
+                await sleep(delay);
+                continue;
+            }
+
+            throw error;
+        }
+    }
 }
