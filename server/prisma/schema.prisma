@@ -50,10 +50,11 @@ model Claim {
 }
 
 model Source {
-  id        Int      @id @default(autoincrement())
-  title     String?
-  url       String   @unique
-  createdAt DateTime @default(now())
+  id          Int      @id @default(autoincrement())
+  title       String?
+  url         String   @unique
+  domain      String?
+  createdAt   DateTime @default(now())
 
   evidence Evidence[]
 }
