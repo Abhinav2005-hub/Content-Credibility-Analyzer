@@ -2,7 +2,7 @@ import prisma from "../config/database.js";
 import { searchWeb } from "./webSearch.service.js";
 import { saveSearchResults } from "./evidenceStorage.service.js";
 import { retrieveEvidence } from "./evidenceRetrieval.service.js";
-import { rankEvidence } from "./evidenceRanking.service.js";
+import { rankEvidence, selectTopEvidence } from "./evidenceRanking.service.js";
 import { verifyClaim } from "./llmVerification.service.js";
 
 export async function runRagVerification(analysisId, claimId) {
@@ -41,10 +41,15 @@ export async function runRagVerification(analysisId, claimId) {
         claim.text,
         evidence
     );
-
+    
+    const selectedEvidence = selectTopEvidence(
+        rankedEvidence,
+        3
+    );
+    
     const verification = await verifyClaim(
         claim.text,
-        rankedEvidence
+        selectedEvidence
     );
 
     const result = await prisma.verificationResult.upsert({
@@ -70,6 +75,6 @@ export async function runRagVerification(analysisId, claimId) {
 
     return {
         result,
-        evidence: rankedEvidence
+        evidence: selectedEvidence
     };
 }

@@ -35,3 +35,17 @@ export function rankEvidence(claimText, evidenceList) {
         (a, b) => b.relevanceScore - a.relevanceScore
     );
 }
+
+export function selectTopEvidence(rankedEvidence, limit = 3) {
+    if (!Array.isArray(rankedEvidence)) {
+        throw new Error("Ranked evidence must be an array");
+    }
+
+    if (limit <= 0) {
+        throw new Error("Evidence limit must be greater than 0");
+    }
+
+    return rankedEvidence
+        .filter((evidence) => evidence.relevanceScore > 0)
+        .slice(0, limit);
+}
