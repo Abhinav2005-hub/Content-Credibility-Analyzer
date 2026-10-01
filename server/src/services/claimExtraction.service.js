@@ -4,11 +4,23 @@ export function extractClaims(text) {
     }
 
     const sentences = text
-        .split(/[.!?]+/)
-        .map(sentence => sentence.trim())
-        .filter(sentence => sentence.length > 0);
+        .split(/(?<=[.!?])\s+/)
+        .map((sentence) => sentence.trim())
+        .filter(Boolean);
 
-    return sentences.map(sentence => ({
-        text: sentence
+    const claims = sentences.filter((sentence) => {
+        if (sentence.length < 20) {
+            return false;
+        }
+
+        if (sentence.endsWith("?")) {
+            return false;
+        }
+
+        return true;
+    });
+
+    return claims.map((sentence) => ({
+        text: sentence.replace(/[.!?]+$/, "")
     }));
 }
