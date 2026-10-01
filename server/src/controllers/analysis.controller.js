@@ -87,6 +87,14 @@ export async function getAnalysis(req, res) {
             });
         }
 
+        const page = Math.max(Number(req.query.page) || 1, 1);
+        const limit = Math.min(
+            Math.max(Number(req.query.limit) || 10, 1),
+            50
+        );
+
+        const skip = (page - 1) * limit;
+
         const content = await prisma.content.findFirst({
             where: {
                 id: contentId,
@@ -101,26 +109,44 @@ export async function getAnalysis(req, res) {
             });
         }
 
-        const analysis = await prisma.analysis.findMany({
-            where: {
-                contentId
-            },
-            orderBy: {
-                createdAt: "desc"
-            }
-        });
+        const [analyses, total] = await Promise.all([
+            prisma.analysis.findMany({
+                where: {
+                    contentId
+                },
+                orderBy: {
+                    createdAt: "desc"
+                },
+                skip,
+                take: limit
+            }),
+
+            prisma.analysis.count({
+                where: {
+                    contentId
+                }
+            })
+        ]);
 
         return res.status(200).json({
             success: true,
-            data: analysis
+            data: {
+                analyses,
+                pagination: {
+                    page,
+                    limit,
+                    total,
+                    totalPages: Math.ceil(total / limit)
+                }
+            }
         });
 
     } catch (error) {
-        console.error("Get analysis error:", error);
+        console.error("Get analyses error:", error);
 
         return res.status(500).json({
             success: false,
-            message: "Failed to fetch analysis"
+            message: "Failed to get analyses"
         });
     }
 }
