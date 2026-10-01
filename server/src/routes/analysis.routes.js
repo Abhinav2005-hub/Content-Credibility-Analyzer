@@ -1,9 +1,12 @@
 import { Router } from "express";
+
 import {
     createAnalysis,
     getAnalysis,
-    getAnalysisById
+    getAnalysisById,
+    getAnalysisHistory
 } from "../controllers/analysis.controller.js";
+
 import { authMiddleware } from "../middleware/auth.middleware.js";
 
 const router = Router();
@@ -18,6 +21,12 @@ router.get(
     "/content/:contentId/analysis",
     authMiddleware,
     getAnalysis
+);
+
+router.get(
+    "/analysis/history",
+    authMiddleware,
+    getAnalysisHistory
 );
 
 router.get(

@@ -218,3 +218,68 @@ export async function getAnalysisById(req, res) {
         });
     }
 }
+
+export async function getAnalysisHistory(req, res) {
+    try {
+        const page = Math.max(Number(req.query.page) || 1, 1);
+        const limit = Math.min(
+            Math.max(Number(req.query.limit) || 10, 1),
+            50
+        );
+
+        const skip = (page - 1) * limit;
+
+        const [analyses, total] = await Promise.all([
+            prisma.analysis.findMany({
+                where: {
+                    content: {
+                        userId: req.userId
+                    }
+                },
+                include: {
+                    content: {
+                        select: {
+                            id: true,
+                            title: true,
+                            createdAt: true
+                        }
+                    }
+                },
+                orderBy: {
+                    createdAt: "desc"
+                },
+                skip,
+                take: limit
+            }),
+
+            prisma.analysis.count({
+                where: {
+                    content: {
+                        userId: req.userId
+                    }
+                }
+            })
+        ]);
+
+        return res.status(200).json({
+            success: true,
+            data: {
+                analyses,
+                pagination: {
+                    page,
+                    limit,
+                    total,
+                    totalPages: Math.ceil(total / limit)
+                }
+            }
+        });
+
+    } catch (error) {
+        console.error("Get analysis history error:", error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Failed to get analysis history"
+        });
+    }
+}
