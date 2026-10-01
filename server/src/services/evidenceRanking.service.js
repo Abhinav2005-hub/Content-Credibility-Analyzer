@@ -6,22 +6,28 @@ export function rankEvidence(claimText, evidenceList) {
     const claimWords = claimText
         .toLowerCase()
         .split(/\W+/)
-        .filter(word => word.length > 2);
+        .filter((word) => word.length > 2);
 
     const rankedEvidence = evidenceList.map((evidence) => {
         const evidenceText = evidence.text.toLowerCase();
 
-        let score = 0;
+        let matchedWords = 0;
 
         for (const word of claimWords) {
             if (evidenceText.includes(word)) {
-                score++;
+                matchedWords++;
             }
         }
 
+        const relevanceScore =
+            claimWords.length > 0
+                ? matchedWords / claimWords.length
+                : 0;
+
         return {
             ...evidence,
-            relevanceScore: score
+            relevanceScore: Number(relevanceScore.toFixed(2)),
+            matchedWords
         };
     });
 
