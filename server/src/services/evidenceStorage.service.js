@@ -10,13 +10,17 @@ function extractDomain(url) {
     }
 }
 
-export async function saveSearchResults(claimId, results) {
+export async function saveSearchResults(claimId, results, searchQuery) {
     if (!claimId) {
         throw new Error("Claim ID is required");
     }
 
     if (!Array.isArray(results)) {
         throw new Error("Search results must be an array");
+    }
+
+    if (!searchQuery) {
+        throw new Error("Search query is required");
     }
 
     const claim = await prisma.claim.findUnique({
@@ -52,7 +56,7 @@ export async function saveSearchResults(claimId, results) {
                 domain
             }
         });
-        
+
         const existingEvidence = await prisma.evidence.findFirst({
             where: {
                 claimId,
@@ -73,7 +77,8 @@ export async function saveSearchResults(claimId, results) {
             data: {
                 claimId,
                 sourceId: source.id,
-                text: result.content
+                text: result.content,
+                searchQuery
             },
             include: {
                 source: true

@@ -28,11 +28,14 @@ export async function runRagVerification(analysisId, claimId) {
         throw new Error("Claim not found for this analysis");
     }
 
-    const searchResults = await searchWeb(claim.text);
+    const searchQuery = claim.text;
 
+    const searchResults = await searchWeb(searchQuery);
+    
     await saveSearchResults(
         claimId,
-        searchResults
+        searchResults,
+        searchQuery
     );
 
     const evidence = await retrieveEvidence(claimId);
