@@ -4,6 +4,7 @@ import { saveSearchResults } from "./evidenceStorage.service.js";
 import { retrieveEvidence } from "./evidenceRetrieval.service.js";
 import { rankEvidence, selectTopEvidence } from "./evidenceRanking.service.js";
 import { verifyClaim } from "./llmVerification.service.js";
+import { generateSearchQuery } from "./searchQuery.service.js";
 
 export async function runRagVerification(analysisId, claimId) {
 
@@ -28,7 +29,7 @@ export async function runRagVerification(analysisId, claimId) {
         throw new Error("Claim not found for this analysis");
     }
 
-    const searchQuery = claim.text;
+    const searchQuery = generateSearchQuery(claim.text);
 
     const searchResults = await searchWeb(searchQuery);
     
