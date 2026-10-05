@@ -204,9 +204,27 @@ export async function getAnalysisById(req, res) {
             });
         }
 
+        const verificationResults = analysis.verificationResults;
+
+        const summary = {
+            totalClaims: analysis.content.claims.length,
+            supported: verificationResults.filter(
+                (result) => result.assessment === "supported"
+            ).length,
+            contradicted: verificationResults.filter(
+                (result) => result.assessment === "contradicted"
+            ).length,
+            insufficientEvidence: verificationResults.filter(
+                (result) => result.assessment === "insufficient_evidence"
+            ).length
+        };
+        
         return res.status(200).json({
             success: true,
-            data: analysis
+            data: {
+                ...analysis,
+                summary
+            }
         });
 
     } catch (error) {
