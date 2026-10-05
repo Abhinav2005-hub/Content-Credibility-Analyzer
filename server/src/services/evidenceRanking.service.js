@@ -1,3 +1,5 @@
+import { getSourceQuality } from "./sourceQuality.service.js";
+
 export function rankEvidence(claimText, evidenceList) {
     if (!claimText || !Array.isArray(evidenceList)) {
         throw new Error("Claim text and evidence list are required");
@@ -24,15 +26,25 @@ export function rankEvidence(claimText, evidenceList) {
                 ? matchedWords / claimWords.length
                 : 0;
 
+        const sourceQuality = getSourceQuality(
+            evidence.source?.domain
+        );
+
+        const finalScore =
+            relevanceScore * 0.7 +
+            sourceQuality * 0.3;
+
         return {
             ...evidence,
             relevanceScore: Number(relevanceScore.toFixed(2)),
+            sourceQuality: Number(sourceQuality.toFixed(2)),
+            finalScore: Number(finalScore.toFixed(2)),
             matchedWords
         };
     });
 
     return rankedEvidence.sort(
-        (a, b) => b.relevanceScore - a.relevanceScore
+        (a, b) => b.finalScore - a.finalScore
     );
 }
 
