@@ -7,10 +7,17 @@ import sourceRoutes from "./routes/source.routes.js";
 import evidenceRoutes from "./routes/evidence.routes.js";
 import analysisRoutes from "./routes/analysis.routes.js";
 import verificationResultRoutes from "./routes/verificationResult.routes.js";
+import cors from "cors";
 
 const app = express();
 
 const PORT = 5000;
+
+app.use(
+    cors({
+        origin: "http://localhost:5173"
+    })
+);
 
 app.use(express.json());
 

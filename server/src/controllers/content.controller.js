@@ -4,7 +4,7 @@ import prisma from "../config/database.js";
 const createContentSchema =  z.object({
     title: z.string().max(200).optional(),
     text: z.string().min(1),
-    sourceUrl: z.string().url().optional()
+    sourceUrl: z.string().url().nullable().optional()
 });
 
 export async function createContent(req, res) {
