@@ -1,11 +1,25 @@
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import Dashboard from "./pages/Dashboard";
+import Analyze from "./pages/Analyze";
+import AnalysisResult from "./pages/AnalysisResult";
+import History from "./pages/History";
+
 function App() {
-  return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-950 text-white">
-          <h1 className="text-4xl font-bold">
-              Content Credibility Analyzer
-          </h1>
-      </div>
-  );
+    return (
+        <BrowserRouter>
+            <Routes>
+                <Route path="/" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/analyze" element={<Analyze />} />
+                <Route path="/analysis/:analysisId" element={<AnalysisResult />} />
+                <Route path="/history" element={<History />} />
+            </Routes>
+        </BrowserRouter>
+    );
 }
 
 export default App;
