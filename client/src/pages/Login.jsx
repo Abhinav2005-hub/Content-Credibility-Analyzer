@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { useState } from "react";
-import axios from "axios";
+import api from "../api/axios";
 
 function Login() {
     const [email, setEmail] = useState("");
@@ -16,15 +16,10 @@ function Login() {
         setLoading(true);
 
         try {
-            const response = await axios.post(
-                "http://localhost:5000/api/auth/login",
-                {
-                    email,
-                    password
-                }
+            const response = await api.post(
+                "/auth/login",
+                { email, password }
             );
-        
-            console.log("Login response:", response.data);
         
             localStorage.setItem(
                 "token",

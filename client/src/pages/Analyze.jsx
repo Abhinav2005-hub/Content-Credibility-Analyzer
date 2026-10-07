@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import axios from "axios";
+import api from "../api/axios";
 
 function Analyze() {
     const navigate = useNavigate();
@@ -19,35 +19,24 @@ function Analyze() {
         setLoading(true);
 
         try {
-            const token = localStorage.getItem("token");
-
-            const contentResponse = await axios.post(
-                "http://localhost:5000/api/content",
+            const contentResponse = await api.post(
+                "/content",
                 {
                     title,
                     text,
                     sourceUrl: sourceUrl || null
-                },
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
                 }
             );
 
             const contentId = contentResponse.data.data.id;
 
-            const analysisResponse = await axios.post(
-                `http://localhost:5000/api/content/${contentId}/analysis`,
-                {},
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
-                }
+            const analysisResponse = await api.post(
+                `/content/${contentId}/analysis`,
+                {}
             );
 
-            const analysisId = analysisResponse.data.data.analysis.id;
+            const analysisId =
+                analysisResponse.data.data.analysis.id;
 
             navigate(`/analysis/${analysisId}`);
 
